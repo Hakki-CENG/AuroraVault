@@ -1,0 +1,511 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@using AuroraVault
+@inject VaultManager VM
+
+<div style="min-height: 100vh; background: radial-gradient(circle at 50% 0%, #111827 0%, #070a12 100%); font-family: system-ui, -apple-system, sans-serif; color: #f8fafc; padding: 2rem 0;">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-xl-11">
+                
+                <div style="background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px;" class="d-flex justify-content-between align-items-center p-4 mb-4 shadow">
+                    <div>
+                        <h1 style="font-weight: 800; letter-spacing: 1px; font-size: 24px; margin: 0; background: linear-gradient(to right, #00f2fe, #a5b4fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">AURORA // VAULT</h1>
+                        <p style="font-size: 11px; color: #64748b; margin: 4px 0 0 0; font-weight: 500; letter-spacing: 0.5px;">Gelişmiş Bilişsel Orkestrasyon ve Güvenli Veri Kapsülü</p>
+                    </div>
+                    @if (!string.IsNullOrEmpty(loggedInUser))
+                    {
+                        <div class="d-flex align-items-center gap-3">
+                            <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); padding: 6px 14px; border-radius: 20px;" class="d-flex align-items-center gap-2">
+                                <span style="width: 6px; height: 6px; background-color: #34d399; border-radius: 50%; display: inline-block;"></span>
+                                <span style="font-size: 11px; font-weight: 700; color: #34d399; letter-spacing: 0.5px;">OPERATÖR: @loggedInUser.ToUpper()</span>
+                            </div>
+                            <button style="background: transparent; border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; transition: 0.2s;" @onclick="Logout">
+                                Çıkış Yap
+                            </button>
+                        </div>
+                    }
+                </div>
+
+                @if (!string.IsNullOrEmpty(globalSystemMessage))
+                {
+                    <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); color: #fbbf24; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 20px; font-size: 13px; font-weight: 500;">
+                        💾 SİSTEM BİLDİRİMİ: @globalSystemMessage
+                    </div>
+                }
+
+                @if (string.IsNullOrEmpty(loggedInUser))
+                {
+                    <div class="row justify-content-center my-5">
+                        <div class="col-md-5">
+                            <div style="background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px;" class="shadow-lg p-5">
+                                <div class="text-center mb-4">
+                                    <h4 style="font-weight: 700; color: #00f2fe; letter-spacing: 0.5px;">KİMLİK DOĞRULAMA</h4>
+                                    <p style="color: #64748b; font-size: 12px;">Kapsüle erişmek için kriptografik anahtarları giriniz</p>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label style="font-size: 11px; font-weight: 600; color: #94a3b8; display: block; margin-bottom: 6px;">KULLANICI ADI</label>
+                                    <input type="text" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 8px; color: #fff; width: 100%;" @bind="authUsername" placeholder="Kullanıcı adınız..." />
+                                </div>
+                                <div class="mb-4">
+                                    <label style="font-size: 11px; font-weight: 600; color: #94a3b8; display: block; margin-bottom: 6px;">GİRİŞ ŞİFRESİ</label>
+                                    <input type="password" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 8px; color: #fff; width: 100%;" @bind="authPassword" placeholder="••••••••" />
+                                </div>
+
+                                @if (isRegisterMode)
+                                {
+                                    <div class="mb-4 p-3 rounded" style="background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.2);">
+                                        <label style="font-size: 11px; font-weight: 700; color: #fbbf24; display: block; margin-bottom: 6px;">📢 MASTER KEY (NOT ŞİFRELEME ANAHTARI)</label>
+                                        <input type="password" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(245, 158, 11, 0.3); padding: 12px; border-radius: 8px; color: #fff; width: 100%;" @bind="authMasterKey" placeholder="Verilerinizi kilitleyecek anahtar..." />
+                                    </div>
+                                    <button class="btn w-100 py-2 fw-bold text-white shadow" style="background: linear-gradient(to right, #8b5cf6, #6d28d9); border-radius: 8px;" @onclick="HandleRegister">
+                                        Kapsülü Kaydet ve Oluştur
+                                    </button>
+                                    <p style="color: #64748b; font-size: 12px; text-align: center; margin-top: 15px; cursor: pointer; text-decoration: underline;" @onclick="() => isRegisterMode = false">
+                                        Zaten bir hesabınız var mı? Giriş yapın
+                                    </p>
+                                }
+                                else
+                                {
+                                    <button class="btn w-100 py-2 fw-bold text-dark shadow" style="background: linear-gradient(to right, #00f2fe, #38bdf8); border-radius: 8px;" @onclick="HandleLogin">
+                                        Erişim İzni Ver (Giriş)
+                                    </button>
+                                    <p style="color: #64748b; font-size: 12px; text-align: center; margin-top: 15px; cursor: pointer; text-decoration: underline;" @onclick="() => isRegisterMode = true">
+                                        Sistemde yeni bir kapsül oluştur (Kayıt Ol)
+                                    </p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="row g-4">
+                        <div class="col-md-3">
+                            <div style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 15px;">
+                                <div style="font-size: 10px; font-weight: 700; color: #475569; padding-left: 10px; margin-bottom: 10px; letter-spacing: 1px;">KASA MODÜLLERİ</div>
+                                
+                                <button class="btn w-100 text-start text-white mb-1 p-2" style="border-radius: 8px; font-size: 13px; font-weight: 600; background: @(activeMenu == "list" ? "rgba(0, 242, 254, 0.1)" : "transparent"); border: @(activeMenu == "list" ? "1px solid rgba(0, 242, 254, 0.2)" : "1px solid transparent"); color: @(activeMenu == "list" ? "#00f2fe" : "#94a3b8") !important;" @onclick='() => ChangeMenu("list")'>📂 [2] Kapsülleri Oku</button>
+                                <button class="btn w-100 text-start text-white mb-1 p-2" style="border-radius: 8px; font-size: 13px; font-weight: 600; background: @(activeMenu == "create" ? "rgba(0, 242, 254, 0.1)" : "transparent"); border: @(activeMenu == "create" ? "1px solid rgba(0, 242, 254, 0.2)" : "1px solid transparent"); color: @(activeMenu == "create" ? "#00f2fe" : "#94a3b8") !important;" @onclick='() => ChangeMenu("create")'>📝 [1] Yeni Not Oluştur</button>
+                                <button class="btn w-100 text-start text-white mb-1 p-2" style="border-radius: 8px; font-size: 13px; font-weight: 600; background: @(activeMenu == "edit" ? "rgba(0, 242, 254, 0.1)" : "transparent"); border: @(activeMenu == "edit" ? "1px solid rgba(0, 242, 254, 0.2)" : "1px solid transparent"); color: @(activeMenu == "edit" ? "#00f2fe" : "#94a3b8") !important;" @onclick='() => ChangeMenu("edit")'>⚙️ [3] Düzenle & Yönet</button>
+                                <button class="btn w-100 text-start text-white mb-1 p-2" style="border-radius: 8px; font-size: 13px; font-weight: 600; background: @(activeMenu == "search" ? "rgba(0, 242, 254, 0.1)" : "transparent"); border: @(activeMenu == "search" ? "1px solid rgba(0, 242, 254, 0.2)" : "1px solid transparent"); color: @(activeMenu == "search" ? "#00f2fe" : "#94a3b8") !important;" @onclick='() => ChangeMenu("search")'>🔍 [4] Matris Arama</button>
+                                <button class="btn w-100 text-start text-white mb-1 p-2" style="border-radius: 8px; font-size: 13px; font-weight: 600; background: @(activeMenu == "trash" ? "rgba(239, 68, 68, 0.05)" : "transparent"); border: @(activeMenu == "trash" ? "1px solid rgba(239, 68, 68, 0.2)" : "1px solid transparent"); color: @(activeMenu == "trash" ? "#ef4444" : "#94a3b8") !important;" @onclick='() => ChangeMenu("trash")'>🗑️ [5] Çöp Kutusu</button>
+                                <button class="btn w-100 text-start text-white mb-1 p-2" style="border-radius: 8px; font-size: 13px; font-weight: 600; background: @(activeMenu == "logs" ? "rgba(255, 255, 255, 0.03)" : "transparent"); border: 1px solid transparent; color: #94a3b8;" @onclick='() => ChangeMenu("logs")'>💻 [6] Sistem Logları</button>
+                                <button class="btn w-100 text-start text-white mb-1 p-2" style="border-radius: 8px; font-size: 13px; font-weight: 600; background: @(activeMenu == "settings" ? "rgba(255, 255, 255, 0.03)" : "transparent"); border: 1px solid transparent; color: #94a3b8;" @onclick='() => ChangeMenu("settings")'>🔧 [7] Cihaz Ayarları</button>
+                            </div>
+                        </div>
+
+                        <div class="col-md-9">
+                            <div style="background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 14px; min-height: 450px;" class="p-4 shadow">
+                                
+                                @if (activeMenu == "create")
+                                {
+                                    <h5 style="font-weight: 700; color: #00f2fe; margin-bottom: 20px;">📝 YENİ GÜVENLİ KAPSÜL OLUŞTUR</h5>
+                                    <div class="mb-3">
+                                        <input type="text" style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.08); padding: 12px; border-radius: 8px; color: #fff; width: 100%; font-size: 14px;" placeholder="Kapsül / Not Başlığı..." @bind="noteTitle" />
+                                    </div>
+                                    <div class="mb-4">
+                                        <textarea rows="6" style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.08); padding: 12px; border-radius: 8px; color: #fff; width: 100%; font-size: 14px;" placeholder="Şifrelenecek hassas veriyi buraya girin..." @bind="noteContent"></textarea>
+                                    </div>
+                                    <div class="row g-3 align-items-center">
+                                        <div class="col-md-6">
+                                            <input type="password" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(245, 158, 11, 0.3); padding: 10px; border-radius: 8px; color: #fbbf24; width: 100%; font-size: 13px;" placeholder="Onay için MASTER KEY girin" @bind="userConfirmMasterKey" />
+                                        </div>
+                                        <div class="col-md-6 text-end">
+                                            <button class="btn fw-bold text-white px-5 shadow" style="background: linear-gradient(to right, #10b981, #059669); border-radius: 8px;" @onclick="ExecuteCreateNote">Veriyi Şifrele ve Kilitle</button>
+                                        </div>
+                                    </div>
+                                }
+
+                                else if (activeMenu == "list")
+                                {
+                                    <h5 style="font-weight: 700; color: #00f2fe; margin-bottom: 20px;">📂 KASADAKİ AKTİF VERİLERİNİZ</h5>
+                                    <div class="row">
+                                        <div class="col-md-4 border-end border-secondary" style="max-height: 380px; overflow-y: auto;">
+                                            @if (VM.AllNotes.Count == 0)
+                                            {
+                                                <p style="color: #475569; font-size: 12px; text-align: center;" class="py-4">Kayıtlı kapsül bulunamadı.</p>
+                                            }
+                                            @for (int i = 0; i < VM.AllNotes.Count; i++)
+                                            {
+                                                int idx = i;
+                                                <div @onclick="() => SelectNoteForReading(idx)" style="padding: 12px; background: @(selectedNoteIndex == idx ? "rgba(0, 242, 254, 0.08)" : "rgba(255,255,255,0.02)"); border: 1px solid @(selectedNoteIndex == idx ? "#00f2fe" : "rgba(255,255,255,0.04)"); border-radius: 8px; margin-bottom: 8px; font-size: 13px; color: @(selectedNoteIndex == idx ? "#00f2fe" : "#cbd5e1"); cursor: pointer; font-weight: @(selectedNoteIndex == idx ? "600" : "500");">
+                                                    🔒 @VM.AllNotes[i].Title
+                                                </div>
+                                            }
+                                        </div>
+                                        <div class="col-md-8 ps-4">
+                                            @if (selectedNoteIndex != null)
+                                            {
+                                                <div style="background: rgba(0,0,0,0.15); padding: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.02);">
+                                                    <h6 style="color: #38bdf8;" class="mb-3">Seçili Veri: @VM.AllNotes[selectedNoteIndex.Value].Title</h6>
+                                                    <div class="input-group mb-3">
+                                                        <input type="password" class="form-control" style="background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.1); color: #fff; font-size: 13px;" placeholder="Çözmek için Master Key girin" @bind="readingMasterKey" />
+                                                        <button class="btn btn-warning fw-bold text-dark" style="font-size: 13px;" @onclick="ExecuteReadNote">Şifreyi Çöz</button>
+                                                    </div>
+                                                    @if (!string.IsNullOrEmpty(decryptedDisplayContent))
+                                                    {
+                                                        <div style="background: rgba(16, 185, 129, 0.03); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; overflow: hidden;" class="mt-3">
+                                                            <div style="background: rgba(16, 185, 129, 0.08); padding: 8px 12px; font-size: 11px; font-weight: 700; color: #34d399; letter-spacing: 0.5px;">🔓 DEŞİFRE EDİLEN İÇERİK:</div>
+                                                            <p style="padding: 12px; font-size: 14px; color: #e2e8f0; margin: 0; white-space: pre-wrap;">@decryptedDisplayContent</p>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div style="color: #475569; text-align: center;" class="pt-5 small">İçeriğini okumak istediğiniz şifreli kapsülü soldaki listeden seçiniz.</div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+
+                                else if (activeMenu == "edit")
+                                {
+                                    <h5 style="font-weight: 700; color: #00f2fe; margin-bottom: 20px;">⚙️ KAPSÜL MODİFİKASYON PANELİ</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-dark table-hover align-middle" style="--bs-table-bg: transparent; font-size: 13px;">
+                                            <thead>
+                                                <tr style="color: #475569; font-size: 11px;">
+                                                    <th>KAPSÜL ADI</th>
+                                                    <th class="text-end">EYLEMLER</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @for (int i = 0; i < VM.AllNotes.Count; i++)
+                                                {
+                                                    int idx = i;
+                                                    <tr>
+                                                        <td style="color: #94a3b8; font-weight: 500;">📄 @VM.AllNotes[i].Title</td>
+                                                        <td class="text-end">
+                                                            <button class="btn btn-sm btn-outline-warning me-1" style="font-size:11px;" @onclick="() => OpenEditMode(idx, false)">Üzerine Yaz</button>
+                                                            <button class="btn btn-sm btn-outline-info me-1" style="font-size:11px;" @onclick="() => OpenEditMode(idx, true)">Sonuna Ekle</button>
+                                                            <button class="btn btn-sm btn-outline-danger" style="font-size:11px;" @onclick="() => ExecuteMoveToTrash(VM.AllNotes[idx].Title)">Çöpe At</button>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    @if (editingNoteIndex != null)
+                                    {
+                                        <div class="p-3 rounded-3 mt-4" style="background: rgba(139, 92, 246, 0.02); border: 1px solid rgba(139, 92, 246, 0.2);">
+                                            <h6 style="color: #c084fc; font-size: 13px;" class="mb-2">Düzenleniyor: @VM.AllNotes[editingNoteIndex.Value].Title (@(isAppendMode ? "Sonuna Ekleme" : "Üzerine Yazma"))</h6>
+                                            <textarea class="form-control mb-2" rows="3" style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.08); color: #fff; font-size: 13px;" placeholder="Yeni verileri buraya girin..." @bind="editNewContent"></textarea>
+                                            <div class="input-group">
+                                                <input type="password" class="form-control" style="background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.1); color: #fff; font-size: 13px;" placeholder="Onay için Master Key Girin" @bind="editMasterKey" />
+                                                <button class="btn btn-primary fw-bold" style="background: #8b5cf6; border: none; font-size: 13px;" @onclick="ExecuteUpdateNote">Değişiklikleri Kaydet</button>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+
+                                else if (activeMenu == "search")
+                                {
+                                    <h5 style="font-weight: 700; color: #00f2fe; margin-bottom: 20px;">🔍 MATRİS ARAMA MOTORU</h5>
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-md-7">
+                                            <input type="text" class="form-control" style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #fff; font-size: 14px;" placeholder="Aranacak anahtar kelime..." @bind="searchQuery" />
+                                        </div>
+                                        <div class="col-md-5">
+                                            <select class="form-select" style="background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.1); color: #fff; font-size: 13px;" @bind="searchMode">
+                                                <option value="1">Sadece Başlıklarda Ara</option>
+                                                <option value="2">İçeriklerde de Ara (Şifre Çözerek)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    @if (searchMode == "2")
+                                    {
+                                        <div class="mb-3" style="max-width: 400px;">
+                                            <input type="password" class="form-control" style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #fff; font-size: 13px;" placeholder="İçerik taraması için Master Key girin" @bind="searchMasterKey" />
+                                        </div>
+                                    }
+                                    <button class="btn w-100 fw-bold text-dark" style="background: linear-gradient(to right, #00f2fe, #38bdf8);" @onclick="ExecuteSearch">Tarama Algoritmasını Tetikle</button>
+
+                                    <div class="mt-4">
+                                        <h6 style="color: #475569; font-size: 11px; font-weight: 700; letter-spacing: 0.5px;">TARAMA SONUÇLARI:</h6>
+                                        @if (searchResults.Count == 0)
+                                        {
+                                            <p style="color: #475569; font-size: 12px; font-style: italic;">Eşleşen herhangi bir veri kümesi bulunamadı.</p>
+                                        }
+                                        @foreach (var result in searchResults)
+                                        {
+                                            <div style="padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.04); border-radius: 6px; font-size: 13px; color: #34d399; margin-bottom: 6px;">@result</div>
+                                        }
+                                    </div>
+                                }
+
+                                else if (activeMenu == "trash")
+                                {
+                                    <h5 style="font-weight: 700; color: #ef4444; margin-bottom: 20px;">🗑️ KARANTİNA / SİLİNEN DOSYALAR</h5>
+                                    <div class="text-end mb-3">
+                                        <button class="btn btn-sm btn-outline-danger px-3 rounded-pill" style="font-size: 11px; font-weight: 600;" @onclick="ExecuteEmptyTrash">⚠️ Havuzu Kalıcı Olarak Temizle</button>
+                                    </div>
+                                    <div class="list-group list-group-flush bg-transparent">
+                                        @if (VM.AllNotes.Count == 0)
+                                        {
+                                            <p style="color: #475569; font-size: 12px; text-align: center;" class="py-5">Karantina havuzu tamamen temiz.</p>
+                                        }
+                                        @foreach (var note in VM.AllNotes)
+                                        {
+                                            <div class="list-group-item bg-transparent text-white-50 border-secondary d-flex justify-content-between align-items-center p-3" style="font-size: 13px;">
+                                                <span>🗑️ @note.Title</span>
+                                                <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3 py-1" style="font-size: 10px;">İmha Bekliyor</span>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+
+                                else if (activeMenu == "logs")
+                                {
+                                    <h5 style="font-weight: 700; color: #00f2fe; margin-bottom: 20px;">💻 OPERASYONEL SİSTEM GÜNLÜĞÜ</h5>
+                                    <div style="background: #04060a; font-family: monospace; color: #a7f3d0; font-size: 12px; max-height: 350px; overflow-y: auto; padding: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); white-space: pre-wrap; line-height: 1.6;">
+                                        @logContent
+                                    </div>
+                                }
+
+                                else if (activeMenu == "settings")
+                                {
+                                    <h5 style="font-weight: 700; color: #00f2fe; margin-bottom: 20px;">🔧 CİHAZ AYARLARI</h5>
+                                    <div style="padding: 40px; text-center: center; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.15);" class="text-center">
+                                        <p style="color: #94a3b8; font-size: 14px;" class="mb-4">Bu cihaz üzerinde otomatik oturum açma yetkisi vermek istiyor musunuz?</p>
+                                        <div class="d-inline-flex gap-3">
+                                            <button class="btn btn-outline-success px-4 rounded-pill fw-bold" style="font-size: 13px;" @onclick='() => ExecuteRememberMe(true)'>Sistemde Beni Hatırla</button>
+                                            <button class="btn btn-outline-danger px-4 rounded-pill fw-bold" style="font-size: 13px;" @onclick='() => ExecuteRememberMe(false)'>Cihaz Hafızasını Sil</button>
+                                        </div>
+                                    </div>
+                                }
+
+                            </div>
+                        </div>
+                    </div>
+                }
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string loggedInUser = "";
+    private string globalSystemMessage = "";
+    private string activeMenu = "list";
+
+    // Auth Form Değişkenleri
+    private bool isRegisterMode = false;
+    private string authUsername = "";
+    private string authPassword = "";
+    private string authMasterKey = "";
+
+    // Not Ekleme Form Değişkenleri
+    private string noteTitle = "";
+    private string noteContent = "";
+    private string userConfirmMasterKey = "";
+
+    // Okuma Modülü Değişkenleri
+    private int? selectedNoteIndex = null;
+    private string readingMasterKey = "";
+    private string decryptedDisplayContent = "";
+
+    // Düzenleme Modülü Değişkenleri
+    private int? editingNoteIndex = null;
+    private bool isAppendMode = false;
+    private string editNewContent = "";
+    private string editMasterKey = "";
+
+    // Arama Değişkenleri
+    private string searchQuery = "";
+    private string searchMode = "1";
+    private string searchMasterKey = "";
+    private List<string> searchResults = new List<string>();
+
+    // Log Değişkeni
+    private string logContent = "";
+
+    protected override void OnInitialized()
+    {
+        string? remembered = UserManager.GetRememberedUser();
+        if (!string.IsNullOrEmpty(remembered))
+        {
+            loggedInUser = remembered;
+            FileManager.LogActivity(loggedInUser, "Otomatik oturum açıldı.");
+            VM.LoadNotes(loggedInUser);
+        }
+    }
+
+    private void ChangeMenu(string menuKey)
+    {
+        activeMenu = menuKey;
+        globalSystemMessage = "";
+        ClearSubForms();
+
+        if (menuKey == "list") VM.LoadNotes(loggedInUser, "Notes");
+        if (menuKey == "edit") VM.LoadNotes(loggedInUser, "Notes");
+        if (menuKey == "trash") VM.LoadNotes(loggedInUser, "Trash");
+        if (menuKey == "logs") RefreshLogs();
+    }
+
+    private void ClearSubForms()
+    {
+        selectedNoteIndex = null;
+        decryptedDisplayContent = "";
+        readingMasterKey = "";
+        editingNoteIndex = null;
+        editNewContent = "";
+        editMasterKey = "";
+        searchResults.Clear();
+    }
+
+    private void HandleLogin()
+    {
+        if (string.IsNullOrEmpty(authUsername) || string.IsNullOrEmpty(authPassword)) return;
+        
+        string[]? data = UserManager.GetUserData(authUsername);
+        if (data != null && data[0] == authPassword)
+        {
+            loggedInUser = authUsername;
+            FileManager.LogActivity(authUsername, "Sisteme web arayüzünden giriş yapıldı.");
+            ChangeMenu("list");
+        }
+        else
+        {
+            globalSystemMessage = "Hatalı kullanıcı adı veya şifre!";
+        }
+    }
+
+    private void HandleRegister()
+    {
+        if (string.IsNullOrEmpty(authUsername) || string.IsNullOrEmpty(authPassword) || string.IsNullOrEmpty(authMasterKey)) return;
+
+        if (UserManager.Register(authUsername, authPassword, authMasterKey))
+        {
+            globalSystemMessage = "Kayıt Başarılı! Şimdi giriş yapabilirsiniz.";
+            FileManager.LogActivity(authUsername, "Web arayüzünden hesap oluşturuldu.");
+            isRegisterMode = false;
+        }
+        else
+        {
+            globalSystemMessage = "[HATA] Bu kullanıcı sistemde zaten mevcut.";
+        }
+    }
+
+    private void Logout()
+    {
+        FileManager.LogActivity(loggedInUser, "Oturum kapatıldı.");
+        loggedInUser = "";
+        authUsername = "";
+        authPassword = "";
+        ClearSubForms();
+    }
+
+    private void ExecuteCreateNote()
+    {
+        if (string.IsNullOrEmpty(noteTitle) || string.IsNullOrEmpty(noteContent)) return;
+
+        if (UserManager.VerifyMasterKey(loggedInUser, userConfirmMasterKey))
+        {
+            VM.AddNote(loggedInUser, noteTitle, noteContent, userConfirmMasterKey);
+            FileManager.LogActivity(loggedInUser, $"YENİ NOT: {noteTitle} şifrelenerek kaydedildi.");
+            globalSystemMessage = $"'{noteTitle}' kapsülü başarıyla şifrelendi.";
+            noteTitle = ""; noteContent = ""; userConfirmMasterKey = "";
+            ChangeMenu("list");
+        }
+        else
+        {
+            globalSystemMessage = "Kritik Hata: Geçersiz MASTER KEY! Şifreleme reddedildi.";
+        }
+    }
+
+    private void SelectNoteForReading(int idx)
+    {
+        selectedNoteIndex = idx;
+        decryptedDisplayContent = "";
+        readingMasterKey = "";
+    }
+
+    private void ExecuteReadNote()
+    {
+        if (selectedNoteIndex == null) return;
+
+        string encrypted = VM.AllNotes[selectedNoteIndex.Value].EncryptedContent;
+        string res = CryptoService.EncryptDecrypt(encrypted, readingMasterKey);
+
+        if (res.StartsWith("[OK]"))
+        {
+            decryptedDisplayContent = res.Substring(4);
+            globalSystemMessage = "Veri deşifre edildi.";
+        }
+        else
+        {
+            globalSystemMessage = "Güvenlik Engeli: Yanlış MASTER KEY!";
+            decryptedDisplayContent = "";
+        }
+    }
+
+    private void OpenEditMode(int idx, bool append)
+    {
+        editingNoteIndex = idx;
+        isAppendMode = append;
+        editNewContent = "";
+        editMasterKey = "";
+    }
+
+    private void ExecuteUpdateNote()
+    {
+        if (editingNoteIndex == null) return;
+        string targetTitle = VM.AllNotes[editingNoteIndex.Value].Title;
+
+        if (UserManager.VerifyMasterKey(loggedInUser, editMasterKey))
+        {
+            VM.UpdateNote(loggedInUser, targetTitle, editNewContent, editMasterKey, isAppendMode);
+            FileManager.LogActivity(loggedInUser, $"NOT GÜNCELLENDİ: {targetTitle}");
+            globalSystemMessage = $"'{targetTitle}' kapsülü güncellendi.";
+            ChangeMenu("list");
+        }
+        else
+        {
+            globalSystemMessage = "Hata: Doğrulama başarısız. Yetkisiz erişim.";
+        }
+    }
+
+    private void ExecuteMoveToTrash(string title)
+    {
+        FileManager.MoveToTrash(loggedInUser, title);
+        FileManager.LogActivity(loggedInUser, $"NOT ÇÖPE ATILDI: {title}");
+        globalSystemMessage = $"'{title}' karantinaya taşındı.";
+        VM.LoadNotes(loggedInUser, "Notes");
+        ClearSubForms();
+    }
+
+    private void ExecuteSearch()
+    {
+        if (string.IsNullOrEmpty(searchQuery)) return;
+        string? mk = (searchMode == "2") ? searchMasterKey : null;
+
+        searchResults = VM.SearchNotes(loggedInUser, searchQuery, searchMode == "2", mk);
+        globalSystemMessage = "Matris taraması tamamlandı.";
+    }
+
+    private void ExecuteEmptyTrash()
+    {
+        VM.EmptyTrash(loggedInUser);
+        FileManager.LogActivity(loggedInUser, "Çöp kutusu kalıcı olarak boşaltıldı.");
+        globalSystemMessage = "Karantina klasörü tamamen temizlendi.";
+        VM.LoadNotes(loggedInUser, "Trash");
+    }
+
+    private void RefreshLogs()
+    {
+        string logPath = Path.Combine(FileManager.GetUserPath(loggedInUser, "Logs"), "activity.log");
+        if (File.Exists(logPath)) logContent = File.ReadAllText(logPath);
+        else logContent = "Sistem üzerinde kayıtlı log kaydı bulunamadı.";
+    }
+
+    private void ExecuteRememberMe(bool status)
+    {
+        UserManager.SetRememberMe(loggedInUser, status);
+        globalSystemMessage = status ? "Beni hatırla aktif. Bir sonraki girişte otomatik bağlanacaksınız." : "Hafıza temizlendi.";
+    }
+}

@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "0f806Y/nOjc=",
+  "success": true,
+  "projectFilePath": "/Users/hakkidemirbas/Desktop/CsharpProjem/CsharpProjem.csproj",
+  "expectedPackageFiles": [
+    "/Users/hakkidemirbas/.nuget/packages/microsoft.aspnetcore.app.internal.assets/10.0.8/microsoft.aspnetcore.app.internal.assets.10.0.8.nupkg.sha512"
+  ],
+  "logs": []
+}
